@@ -6,15 +6,14 @@ library(maptools)
 ch <- readShapePoly("trt10_churning_selected")
 dfch <- data.frame(ch)
 city <- read.csv("city_churn_fast.csv")
-zips <- read.csv("ZIP_centroids.csv")
 
 shinyServer(function(input, output) {
   
   # Grab ZIP code input
-  center <- reactiveValues(xcoord=-118.2386, ycoord=34.06583)
+  center <- reactiveValues(xcoord=-117.7736, ycoord=33.67801)
   observeEvent(input$recenter, {
-    center$xcoord = zips$x_centr[zips$CODE==input$zip]
-    center$ycoord = zips$y_centr[zips$CODE==input$zip]
+    center$xcoord = city$x_centr[city$NAME10==input$cent]
+    center$ycoord = city$y_centr[city$NAME10==input$cent]
   })
  
   # Grab Inputs - ALL
@@ -29,7 +28,7 @@ shinyServer(function(input, output) {
     options$choose = paste("churn", churnlink, sep="")
   })
   observeEvent(input$clustgo, {
-    clustlink = switch(input$clust, "Socioeconomically-derived Clusters"="fac2", "Spatially-derived Clusters"="LISA")
+    clustlink = switch(input$clust, "Churning-derived Clusters"="fac2", "Spatially-derived Clusters"="LISA2")
     options$choose = paste("clust", clustlink, sep="")
   })
   observeEvent(input$growgo, {
@@ -59,37 +58,40 @@ shinyServer(function(input, output) {
   observe({
     pal <- colorpal()
     datause <- dfch[,grep(options$choose, colnames(dfch))]
+    lab <- switch(options$choose, 'ones'=' ','totemp1997'='Employment in 1997', 'totemp2000'='Employment in 2000', 'totemp12'='Employment in 2012', 'totemp14'='Employment in 2014', 'totemp9714'='Employment Growth, 1997-2014', 'totemp0012'='Employment Growth, 2000-2012', 'growjob'='Churning and Job Growth', 'growhov'='Churning and Home Value Growth', 'growinc'='Churning and Income Growth', 'clustfac2'='Churning-derived Clusters', 'clustLISA2'='Spatially-derived Clusters', 'churn0012'='Churning, 2000-2012', 'churn9714'='Churning, 1997-2014')
     leafletProxy("map") %>% clearControls() %>% clearShapes() %>% 
       addPolygons(data=ch, stroke=T, weight=1, fillColor = ~pal(datause), color="black",
                   fillOpacity=0.6, opacity=1, popup=~NAME10) %>%
-      addLegend("bottomleft", pal=pal, values=datause, opacity=0.75, title=options$choose)
+      addLegend("bottomleft", pal=pal, values=datause, opacity=0.75, title=lab)
     })
   
   # Generate Histogram
-  observeEvent(input$histgo, {  
     output$hist <- renderPlot({
       if(input$analysis == 5 | input$analysis == 3){return(NULL)}   else{ 
+        par(mar=c(2.5,4,4,2))
+        par(oma=c(1.5,0,0,0))
         datause <- city[,grep(options$choose, colnames(city))]
         datause[is.na(datause)] = 0
+        lab <- switch(options$choose, 'ones'=' ','totemp1997'='Employment in 1997', 'totemp2000'='Employment in 2000', 'totemp12'='Employment in 2012', 'totemp14'='Employment in 2014', 'totemp9714'='Employment Growth, 1997-2014', 'totemp0012'='Employment Growth, 2000-2012', 'growjob'='Churning and Job Growth', 'growhov'='Churning and Home Value Growth', 'growinc'='Churning and Income Growth', 'clustfac2'='Churning-derived Clusters', 'clustLISA2'='Spatially-derived Clusters', 'churn0012'='Churning, 2000-2012', 'churn9714'='Churning, 1997-2014')
         q2 = as.numeric(quantile(datause, 0.02))
         q98 = as.numeric(quantile(datause, 0.98))
         hist(datause, xlab=NULL, col="dodgerblue", breaks=((max(datause)-min(datause))/(q98-q2))*12, xlim=c(q2, q98),
-             ylab="# of SoCal Cities", border="white", main=options$choose)
+             ylab="# of SoCal Cities", border="white", main=lab)
         legend("topright", c(input$city), lwd=2, box.col="white")
         abline(v=mean(datause, na.rm=T), lty=2)
         legend("topright", c(input$city, "Avg"), lwd=c(2,1), lty=c(1,2), box.col="white")
         abline(v=city[,grep(options$choose, colnames(city))][city$NAME10==input$city], lwd=2)
+        mtext("Values shown are for all census tracts within each city.", side=1, cex=0.85, font=3, outer=TRUE)
         }
     })
-  })
-  
+
   # Add Descriptions
   output$var_desc <- renderText({
     data_notes = switch(input$analysis,
                         "1" = "Employment is derived from ReferenceUSA and shows the number of jobs in each tract. Employment growth shows the net increase/decrease in job count per tract (not a percent).",
                         "2" = "Churning is calculated as the (annualized) sum of business establishment births and deaths divided by total employment. It is a measure of local economic turnover.",
-                        "3" = "Socioeconomic clusters group similarly-churning tracts based on things like income, race, and homeownership into 6 categories. Spatial clusters identify hotspots where nearby tracts display similar levels of churn. You must click CLEAR RESULTS before switching to another analysis.",
-                        "4" = "These are results from a geographically-weighted regression showing how the relationship between churning and growth varies over space. In some areas, churning is associated with growth but in other areas it is associated with decline.")
+                        "3" = "Churning-derived clusters are 6 distinct groupings of tracts with similar business dynamics. Spatial-derived clusters are hotspots where nearby tracts display similar levels of churn.",
+                        "4" = "These are results from a geographically-weighted regression showing how the relationship between churning and growth varies over space. A positive value (blue) indicates where more churning is associated with growth and a negative value (red) indicates where more churning is associated with decline.")
     paste("-- ", data_notes, sep="")
   })
   

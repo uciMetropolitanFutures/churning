@@ -13,10 +13,10 @@ shinyUI(tabPanel("Business Churning in Southern California", div(class="outer",
                                                                
         absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE, draggable = TRUE, top = 60, left = "auto", 
                         right = 20, bottom = "auto",  width = 330, height = "auto",
-                      h2("Business Churning in Southern California"),
-                      textInput("zip", label=strong("Zoom to 5-digit ZIP:"), value=90012),
-                      br(),
-                      actionButton("recenter", label="Re-center"),
+                      h2("Business Churning in Southern California Census Tracts"),
+                      selectInput("cent", label=strong("Zoom to City:"), selected="Irvine", choices=citynames),
+                      
+                      actionButton("recenter", label="Re-center Map"),
                       br(),
                       p(strong("Select Topic of Analysis:")), 
                       
@@ -32,27 +32,30 @@ shinyUI(tabPanel("Business Churning in Southern California", div(class="outer",
                                        actionButton("churngo", label="Go/Refresh")),
                     
                       conditionalPanel("input.analysis == 3", 
-                                      selectInput("clust", label=strong("Select Further Options:"), choices=list("Socioeconomically-derived Clusters", "Spatially-derived Clusters"), selected="Socioeconomically-derived Clusters"),
+                                      selectInput("clust", label=strong("Select Further Options:"), choices=list("Churning-derived Clusters", "Spatially-derived Clusters"), selected="Socioeconomically-derived Clusters"),
+                                      p("IMPORTANT: Must clear results after viewing clusters."),
                                       actionButton("clustgo", label="Go/Refresh"),
                                       actionButton("clear", label="Clear Results")),
                       
                       conditionalPanel("input.analysis == 4",
                                       selectInput("grow", label=strong("Select Further Options:"), choices=list("Churning and Job Growth", "Churning and Income Growth", "Churning and Home Value Growth"), selected="Churning and Job Growth"),
                                       actionButton("growgo", label="Go/Refresh")),
-                                      
+                                     
                       conditionalPanel("input.analysis != 5 | input.analysis != 3",
-                                       selectInput("city", label=em("Select City to display churn, 1997-2014:"), selected="Los Angeles", choices=citynames),
-                                       actionButton("histgo", label="Generate Histogram")),
-                      
-                      plotOutput("hist", height = 225)
+                                       selectInput("city", label=strong("Select city to display on histogram: "), selected="Irvine", choices=citynames)),
+                      br(),      
+                      plotOutput("hist", height = 225),
+                      h6(em("by the ", a("Metropolitan Futures Initiative", href="http://mfi.soceco.uci.edu", target="_blank"), "at UC-Irvine (2016). Webmap by ", a("Kevin Kane, PhD", href="http://www.kevinkane.org", target="_blank"), "and", a("UCI Data Science Initiative", href="http://datascience.uci.edu", target="_blank")))
                       ),
     
         absolutePanel(id = "controls", class="panel panel-default", fixed = TRUE, draggable=TRUE, top=110, left=10, right="auto",
-                        bottom="auto", width=150, height="auto",
+                        bottom="auto", width=160, height="auto",
                       p("Data Notes:"),
-                      h6("-- Map data are presented in census tracts (2010 boundaries). The histogram reports the total values for all tracts in a city (not available for clusters)."),
+                      h6("-- Please be patient while the map loads! Allow 20-30 sec."),
+                      h6("-- Click Go/Refresh after making new selections to ensure correct map and legend are displayed, and to clear any error messages."),
+                      h6("-- Tracts with fewer than 100 businesses are omitted."),
                       h6(textOutput("var_desc")),
-                      h6("Please see the full MFI report for details.")
+                      h6("-- See the ", a("full report here.", href="http://mfi.soceco.uci.edu/2016/07/01/report-understanding-business-churning-dynamics-and-their-spatial-variation", target="_blank"))
                       )
            
 )))
