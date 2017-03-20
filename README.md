@@ -2,3 +2,6 @@
 # An R shiny app for UCI's Metropolitan Futures Initiative 
 
 # Consists of ui.R, server.R, ZIP_centroids.csv, a shapefile, a css, and possibly additional data
+
+# This application is currently hosted at:
+# shiny.datascience.uci.edu/uciMetropolitanFutures/churning
